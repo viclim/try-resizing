@@ -2,6 +2,8 @@
   Click anywhere on the grid to create a square, then resize the window.
   <br />
   The square's top left corner should stick to the same spot on the grid.
+  <br />
+  The square resizes by having its dimension in percentage.
 </p>
 <div id="container">
   <img id="document" src="./bg.jpg" />
@@ -33,14 +35,6 @@
 
 <script>
   (function() {
-
-    const debounce = (func, timeout = 100) => {
-      let timer;
-      return (...args) => {
-        clearTimeout(timer);
-        timer = setTimeout(() => { func.apply(this, args); }, timeout);
-      };
-    };
     const getRelativeCoordinates = (dom) => {
       const parent = dom.parentElement.getBoundingClientRect();
       const rect = dom.getBoundingClientRect();
@@ -48,15 +42,17 @@
     };
     const getDimension = (dom) => {
       const rect = dom.getBoundingClientRect();
-      return { width: rect.width, height: rect.height, hypot: Math.hypot(rect.width) };
+      return { width: rect.width };
     };
     const getRatio = (oriDimension,  dom) => {
-      return getDimension(dom).hypot / oriDimension.hypot;
+      return getDimension(dom).width / oriDimension.width;
     };
 
     const clickzone = document.getElementById('container');
     const doc = document.getElementById('document');
-    const originalDimension = { width: 1800, height: 1200, hypot: Math.hypot(1800, 1200) };
+
+    // First you get the original dimension of the document.
+    const originalDimension = { width: 1800 };
 
     let ratio = getRatio(originalDimension, doc);
     clickzone.addEventListener('click', (e) => {
