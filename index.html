@@ -29,8 +29,8 @@
 
     .static {
         position: absolute;
-        width: 6%;
-        aspect-ratio: 1;
+        width: 10rem;
+        height: 4rem;
         text-align: center;
     }
     .bg-coloured {
@@ -41,10 +41,15 @@
 
   <script>
     (function() {
-        const getRelativeCoordinates = (dom) => {
+        const getBox = (dom) => {
             const parent = dom.parentElement.getBoundingClientRect();
             const rect = dom.getBoundingClientRect();
-            return { x: rect.left - parent.left, y: rect.top - parent.top };
+            return {
+                x: rect.left - parent.left,
+                y: rect.top - parent.top,
+                w: rect.width,
+                h: rect.height
+            };
         };
         const getDimension = (dom) => {
             const rect = dom.getBoundingClientRect();
@@ -58,21 +63,43 @@
         const clickzone = document.getElementById('document');
         const doc = document.getElementById('document');
         const things = interact('.static');
-        things.draggable({
-            listeners: {
-                move: (event) => {
-                    const x = Number(event.target.dataset.viewX) + event.dx;
-                    const y = Number(event.target.dataset.viewY) + event.dy;
-                    event.target.dataset.viewX = x
-                    event.target.dataset.viewY = y
-                    event.target.dataset.docX = x / ratio;
-                    event.target.dataset.docY = y / ratio;
-                    event.target.style.left = `${x}px`;
-                    event.target.style.top = `${y}px`;
-                }
+        things
+            .draggable({
+                listeners: {
+                    move: (event) => {
+                        const x = parseFloat(event.target.dataset.viewX) + event.dx;
+                        const y = parseFloat(event.target.dataset.viewY) + event.dy;
+                        event.target.dataset.viewX = x
+                        event.target.dataset.viewY = y
+                        event.target.dataset.docX = x / ratio;
+                        event.target.dataset.docY = y / ratio;
+                        event.target.style.left = `${x}px`;
+                        event.target.style.top = `${y}px`;
+                    }
 
-            }
-        });
+                }
+            })
+            .resizable({
+                edges: {
+                    bottom: true,
+                    right: true
+                },
+                listeners: {
+                    move: (event) => {
+                        const div = event.target;
+                        let { viewX: x, viewY: y } = div.dataset;
+                        x = (parseFloat(x) || 0) + event.deltaRect.left;
+                        y = (parseFloat(y) || 0) + event.deltaRect.top;
+                        div.dataset.viewW = event.rect.width;
+                        div.dataset.viewH = event.rect.height;
+                        div.dataset.docW = event.rect.width / ratio;
+                        div.dataset.docH = event.rect.height / ratio;
+                        div.style.width = `${event.rect.width}px`;
+                        div.style.height = `${event.rect.height}px`;
+                        div.style.transform = `translate(${x}, ${y}px)`;
+                    }
+                }
+            });
 
         // First you get the original width of the document.
         const originalDimension = { width: 1800 };
@@ -89,14 +116,18 @@
             div.style.left = `${e.offsetX}px`;
             div.style.top = `${e.offsetY}px`;
             container.appendChild(div);
-            const coordinates = getRelativeCoordinates(div);
+            const box = getBox(div);
 
             // With the ratio you can deduce the coordinates of the square
             // on the original-sized document
-            div.dataset.docX = coordinates.x / ratio;
-            div.dataset.docY = coordinates.y / ratio;
-            div.dataset.viewX = coordinates.x;
-            div.dataset.viewY = coordinates.y;
+            div.dataset.docX = box.x / ratio;
+            div.dataset.docY = box.y / ratio;
+            div.dataset.viewX = box.x;
+            div.dataset.viewY = box.y;
+            div.dataset.docW = box.w / ratio;
+            div.dataset.docH = box.h / ratio;
+            div.dataset.viewW = box.w;
+            div.dataset.viewH = box.h;
         });
 
         // Then on window resize you recalculate the ratio to reposition the square.
@@ -107,8 +138,12 @@
             for (const child of children) {
                 child.dataset.viewX = child.dataset.docX * ratio;
                 child.dataset.viewY = child.dataset.docY * ratio;
+                child.dataset.viewW = child.dataset.docW * ratio;
+                child.dataset.viewH = child.dataset.docH * ratio;
                 child.style.left = `${child.dataset.viewX}px`;
                 child.style.top = `${child.dataset.viewY}px`;
+                child.style.width = `${child.dataset.viewW}px`;
+                child.style.height = `${child.dataset.viewH}px`;
             }
         };
 
