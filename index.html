@@ -1,0 +1,75 @@
+<div id="container">
+  <img id="document" src="./bg.jpg" />
+</div>
+
+<style>
+  #container {
+    box-sizing: border-box;
+  }
+
+  #document {
+    box-sizing: border-box;
+    width: 100%;
+    z-index: 0;
+  }
+
+  .static {
+    position: absolute;
+    width: 1rem;
+    aspect-ratio: 5/4;
+    text-align: center;
+  }
+  .bg-coloured {
+    background-color: red;
+    opacity: 0.9;
+  }
+  .resizable {
+    transform-origin: top left;
+  }
+</style>
+
+<script>
+  (function() {
+
+    const debounce = (func, timeout = 100) => {
+      let timer;
+      return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => { func.apply(this, args); }, timeout);
+      };
+    };
+    const getRatio = (originalDimension,  dom) => {
+      const rect = dom.getBoundingClientRect();
+      return Math.hypot(rect.width, rect.height) / originalDimension.hypot
+    };
+
+    const docDimension = { width: 6048, height: 4024, hypot: Math.hypot(6048, 4024) };
+    const doc = document.getElementById('document');
+    const clickzone = document.getElementById('container');
+
+    let ratio = getRatio(docDimension, doc);
+    clickzone.addEventListener('click', (e) => {
+      const div = document.createElement('div');
+      div.classList.add('bg-coloured', 'static', 'resizable');
+      div.style.left = `${e.x}px`;
+      div.style.top = `${e.y}px`;
+      clickzone.appendChild(div);
+      const rect = div.getBoundingClientRect();
+      div.dataset.left = rect.left / ratio;
+      div.dataset.top = rect.top / ratio;
+      div.dataset.width = rect.width / ratio;
+    });
+    const resize = (e) => {
+      ratio = getRatio(docDimension, doc);
+
+      const children = clickzone.querySelectorAll('.resizable');
+      for (const child of children) {
+        child.style.left = `${child.dataset.left * ratio}px`;
+        child.style.top = `${child.dataset.top * ratio}px`;
+        child.style.width = `${child.dataset.width * ratio}px`;
+      }
+    };
+
+    window.addEventListener('resize', resize);
+  }());
+</script>
