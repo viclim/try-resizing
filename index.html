@@ -5,6 +5,7 @@
 <style>
   #container {
     box-sizing: border-box;
+    position: relative;
   }
 
   #document {
@@ -15,16 +16,13 @@
 
   .static {
     position: absolute;
-    width: 1rem;
-    aspect-ratio: 5/4;
+    width: 6%;
+    aspect-ratio: 1;
     text-align: center;
   }
   .bg-coloured {
     background-color: red;
     opacity: 0.9;
-  }
-  .resizable {
-    transform-origin: top left;
   }
 </style>
 
@@ -38,35 +36,41 @@
         timer = setTimeout(() => { func.apply(this, args); }, timeout);
       };
     };
-    const getRatio = (originalDimension,  dom) => {
+    const getRelativeCoordinates = (dom) => {
+      const parent = dom.parentElement.getBoundingClientRect();
       const rect = dom.getBoundingClientRect();
-      return Math.hypot(rect.width, rect.height) / originalDimension.hypot
+      return { x: rect.left - parent.left, y: rect.top - parent.top };
+    };
+    const getDimension = (dom) => {
+      const rect = dom.getBoundingClientRect();
+      return { width: rect.width, height: rect.height, hypot: Math.hypot(rect.width) };
+    };
+    const getRatio = (oriDimension,  dom) => {
+      return getDimension(dom).hypot / oriDimension.hypot;
     };
 
-    const docDimension = { width: 6048, height: 4024, hypot: Math.hypot(6048, 4024) };
-    const doc = document.getElementById('document');
     const clickzone = document.getElementById('container');
+    const doc = document.getElementById('document');
+    const originalDimension = { width: 1800, height: 1200, hypot: Math.hypot(1800, 1200) };
 
-    let ratio = getRatio(docDimension, doc);
+    let ratio = getRatio(originalDimension, doc);
     clickzone.addEventListener('click', (e) => {
       const div = document.createElement('div');
       div.classList.add('bg-coloured', 'static', 'resizable');
-      div.style.left = `${e.x}px`;
-      div.style.top = `${e.y}px`;
+      div.style.left = `${e.offsetX}px`;
+      div.style.top = `${e.offsetY}px`;
       clickzone.appendChild(div);
-      const rect = div.getBoundingClientRect();
-      div.dataset.left = rect.left / ratio;
-      div.dataset.top = rect.top / ratio;
-      div.dataset.width = rect.width / ratio;
+      const coordinates = getRelativeCoordinates(div);
+      div.dataset.x = coordinates.x / ratio;
+      div.dataset.y = coordinates.y / ratio;
     });
     const resize = (e) => {
-      ratio = getRatio(docDimension, doc);
+      ratio = getRatio(originalDimension, doc);
 
       const children = clickzone.querySelectorAll('.resizable');
       for (const child of children) {
-        child.style.left = `${child.dataset.left * ratio}px`;
-        child.style.top = `${child.dataset.top * ratio}px`;
-        child.style.width = `${child.dataset.width * ratio}px`;
+        child.style.left = `${child.dataset.x * ratio}px`;
+        child.style.top = `${child.dataset.y * ratio}px`;
       }
     };
 
