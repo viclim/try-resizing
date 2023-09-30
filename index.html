@@ -1,87 +1,118 @@
-<p>
-  Click anywhere on the grid to create a square, then resize the window.
-  <br />
-  The square's top left corner should stick to the same spot on the grid.
-  <br />
-  The square resizes by having its dimension in percentage.
-</p>
-<div id="container">
-  <img id="document" src="./bg.jpg" />
-</div>
+<head>
+  <script src="./interact.min.js"></script>
+</head>
+<body>
+  <p>
+    Click anywhere on the grid to create a square, then resize the window.
+    <br />
+    The square's top left corner should stick to the same spot on the grid.
+    <br />
+    The square resizes by having its dimension in percentage.
+  </p>
+  <div id="container">
+    <img id="document" src="./bg.jpg" />
+  </div>
 
-<style>
-  #container {
-    box-sizing: border-box;
-    position: relative;
-  }
+  <style>
+    #container {
+        box-sizing: border-box;
+        position: relative;
+    }
 
-  #document {
-    box-sizing: border-box;
-    width: 100%;
-    z-index: 0;
-  }
+    #document {
+        box-sizing: border-box;
+        width: 100%;
+        z-index: 0;
+        user-select: none;
+        pointer-events: none;
+    }
 
-  .static {
-    position: absolute;
-    width: 6%;
-    aspect-ratio: 1;
-    text-align: center;
-  }
-  .bg-coloured {
-    background-color: red;
-    opacity: 0.9;
-  }
-</style>
+    .static {
+        position: absolute;
+        width: 6%;
+        aspect-ratio: 1;
+        text-align: center;
+    }
+    .bg-coloured {
+        background-color: red;
+        opacity: 0.9;
+    }
+  </style>
 
-<script>
-  (function() {
-    const getRelativeCoordinates = (dom) => {
-      const parent = dom.parentElement.getBoundingClientRect();
-      const rect = dom.getBoundingClientRect();
-      return { x: rect.left - parent.left, y: rect.top - parent.top };
-    };
-    const getDimension = (dom) => {
-      const rect = dom.getBoundingClientRect();
-      return { width: rect.width };
-    };
-    const getRatio = (oriDimension,  dom) => {
-      return getDimension(dom).width / oriDimension.width;
-    };
+  <script>
+    (function() {
+        const getRelativeCoordinates = (dom) => {
+            const parent = dom.parentElement.getBoundingClientRect();
+            const rect = dom.getBoundingClientRect();
+            return { x: rect.left - parent.left, y: rect.top - parent.top };
+        };
+        const getDimension = (dom) => {
+            const rect = dom.getBoundingClientRect();
+            return { width: rect.width };
+        };
+        const getRatio = (oriDimension,  dom) => {
+            return getDimension(dom).width / oriDimension.width;
+        };
 
-    const clickzone = document.getElementById('container');
-    const doc = document.getElementById('document');
+        const container = document.getElementById('container');
+        const clickzone = document.getElementById('document');
+        const doc = document.getElementById('document');
+        const things = interact('.static');
+        things.draggable({
+            listeners: {
+                move: (event) => {
+                    const x = Number(event.target.dataset.viewX) + event.dx;
+                    const y = Number(event.target.dataset.viewY) + event.dy;
+                    event.target.dataset.viewX = x
+                    event.target.dataset.viewY = y
+                    event.target.dataset.docX = x / ratio;
+                    event.target.dataset.docY = y / ratio;
+                    event.target.style.left = `${x}px`;
+                    event.target.style.top = `${y}px`;
+                }
 
-    // First you get the original width of the document.
-    const originalDimension = { width: 1800 };
+            }
+        });
 
-    // Then you calculate the ratio (rendered width) / (original width)
-    let ratio = getRatio(originalDimension, doc);
+        // First you get the original width of the document.
+        const originalDimension = { width: 1800 };
 
-    clickzone.addEventListener('click', (e) => {
-      const div = document.createElement('div');
-      div.classList.add('bg-coloured', 'static', 'resizable');
-      div.style.left = `${e.offsetX}px`;
-      div.style.top = `${e.offsetY}px`;
-      clickzone.appendChild(div);
-      const coordinates = getRelativeCoordinates(div);
+        // Then you calculate the ratio (rendered width) / (original width)
+        let ratio = getRatio(originalDimension, doc);
 
-      // With the ratio you can deduce the coordinates of the square
-      // on the original-sized document
-      div.dataset.x = coordinates.x / ratio;
-      div.dataset.y = coordinates.y / ratio;
-    });
+        container.addEventListener('click', (e) => {
+            if (e.target != container) {
+                return;
+            }
+            const div = document.createElement('div');
+            div.classList.add('bg-coloured', 'static', 'resizable');
+            div.style.left = `${e.offsetX}px`;
+            div.style.top = `${e.offsetY}px`;
+            container.appendChild(div);
+            const coordinates = getRelativeCoordinates(div);
 
-    // Then on window resize you recalculate the ratio to reposition the square.
-    const resize = (e) => {
-      ratio = getRatio(originalDimension, doc);
+            // With the ratio you can deduce the coordinates of the square
+            // on the original-sized document
+            div.dataset.docX = coordinates.x / ratio;
+            div.dataset.docY = coordinates.y / ratio;
+            div.dataset.viewX = coordinates.x;
+            div.dataset.viewY = coordinates.y;
+        });
 
-      const children = clickzone.querySelectorAll('.resizable');
-      for (const child of children) {
-        child.style.left = `${child.dataset.x * ratio}px`;
-        child.style.top = `${child.dataset.y * ratio}px`;
-      }
-    };
+        // Then on window resize you recalculate the ratio to reposition the square.
+        const resize = (e) => {
+            ratio = getRatio(originalDimension, doc);
 
-    window.addEventListener('resize', resize);
-  }());
-</script>
+            const children = container.querySelectorAll('.resizable');
+            for (const child of children) {
+                child.dataset.viewX = child.dataset.docX * ratio;
+                child.dataset.viewY = child.dataset.docY * ratio;
+                child.style.left = `${child.dataset.viewX}px`;
+                child.style.top = `${child.dataset.viewY}px`;
+            }
+        };
+
+        window.addEventListener('resize', resize);
+    }());
+  </script>
+</body>
