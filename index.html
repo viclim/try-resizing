@@ -51,10 +51,12 @@
     const clickzone = document.getElementById('container');
     const doc = document.getElementById('document');
 
-    // First you get the original dimension of the document.
+    // First you get the original width of the document.
     const originalDimension = { width: 1800 };
 
+    // Then you calculate the ratio (rendered width) / (original width)
     let ratio = getRatio(originalDimension, doc);
+
     clickzone.addEventListener('click', (e) => {
       const div = document.createElement('div');
       div.classList.add('bg-coloured', 'static', 'resizable');
@@ -62,9 +64,14 @@
       div.style.top = `${e.offsetY}px`;
       clickzone.appendChild(div);
       const coordinates = getRelativeCoordinates(div);
+
+      // With the ratio you can deduce the coordinates of the square
+      // on the original-sized document
       div.dataset.x = coordinates.x / ratio;
       div.dataset.y = coordinates.y / ratio;
     });
+
+    // Then on window resize you recalculate the ratio to reposition the square.
     const resize = (e) => {
       ratio = getRatio(originalDimension, doc);
 
